@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AJonny Shop - Delivery Partner</title>
+    
+    <!-- Dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-teal: #00796b;
+            --primary-dark: #004d40;
+            --bg-light: #f4f6f9;
+            --text-dark: #2c3e50;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- AUTH & ONBOARDING --- */
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-teal) 100%);
+            padding: 20px;
+        }
+        .auth-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+        }
+        .nav-pills .nav-link.active {
+            background-color: var(--primary-teal);
+            color: white !important;
+        }
+        .nav-pills .nav-link { color: var(--primary-dark); font-weight: 500; }
+
+        .scrollable-form {
+            max-height: 60vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 10px;
+        }
+        .scrollable-form::-webkit-scrollbar { width: 5px; }
+        .scrollable-form::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+        /* --- LAYOUTS --- */
+        .app-view { display: none; }
+        .app-view.active { display: block; }
+        
+        .main-content {
+            padding: 15px;
+            padding-bottom: 80px;
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: white;
+            box-shadow: 0 -2px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            padding-bottom: env(safe-area-inset-bottom, 10px);
+        }
+        .bottom-nav a {
+            flex: 1;
+            text-align: center;
+            color: #95a5a6;
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: 600;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .bottom-nav a.active { color: var(--primary-teal); }
+        .bottom-nav i { display: block; font-size: 20px; margin-bottom: 4px; }
+
+        /* --- HEADER & STATS --- */
+        .mobile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #000000; 
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            border: 1px solid #222;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- DELIVERY CARDS --- */
+        .delivery-card {
+            background: white; 
+            border-radius: 16px; 
+            padding: 18px;
+            border-left: 5px solid var(--primary-teal);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .location-track {
+            position: relative;
+            padding-left: 20px;
+            margin: 15px 0;
+        }
+        .location-track::before {
+            content: '';
+            position: absolute;
+            left: 5px; top: 5px; bottom: 5px;
+            width: 2px;
+            background: #e0e0e0;
+            border-left: 2px dashed #bdc3c7;
+        }
+        .loc-point { position: relative; margin-bottom: 15px; }
+        .loc-point i {
+            position: absolute;
+            left: -27px;
+            top: 2px;
+            background: white;
+            font-size: 14px;
+        }
+
+        .btn-teal { background-color: var(--primary-teal); color: white; border: none; }
+        .btn-teal:hover { background-color: var(--primary-dark); color: white; }
+
+        .otp-input {
+            letter-spacing: 12px;
+            font-size: 28px;
+            text-align: center;
+            font-weight: bold;
+            border: 2px solid var(--primary-teal);
+            border-radius: 10px;
+        }
+        .otp-input:focus { box-shadow: none; border-color: var(--primary-dark); }
+
+        /* Loader */
+        .loader-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--primary-teal);
+            z-index: 9999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .spinner { width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Scanning Animation */
+        .radar {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: rgba(0, 121, 107, 0.1);
+            position: relative;
+            margin: 0 auto 15px auto;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .radar::after {
+            content: ''; position: absolute; width: 100%; height: 100%;
+            border-radius: 50%; border: 2px solid var(--primary-teal);
+            animation: pulse 1.5s linear infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Overlay -->
+    <div id="loader" class="loader-overlay">
+        <div class="spinner"></div>
+        <h4 class="mt-3 text-white fw-bold">AJonny Delivery</h4>
+    </div>
+
+    <!-- 1. AUTHENTICATION & ONBOARDING VIEW -->
+    <div id="authView" class="app-view auth-container">
+        <div class="auth-card">
+            <div class="text-center mb-4">
+                <img src="logo.jpg" alt="AJonny Driver Panel" style="max-width: 100%; height: 90px; object-fit: contain; margin-bottom: 10px;">
+                <p class="text-muted small mt-2">Deliver orders & earn money</p>
+            </div>
+
+            <ul class="nav nav-pills nav-justified mb-4" id="authTabs">
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#loginTab">Login</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#applyTab">Register</button></li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- Login -->
+                <div class="tab-pane fade show active" id="loginTab">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <input type="email" class="form-control py-2" id="loginEmail" placeholder="Email Address" required>
+                        </div>
+                        <div class="mb-4">
+                            <input type="password" class="form-control py-2" id="loginPassword" placeholder="Password" required>
+                        </div>
+                        <button type="submit" class="btn btn-teal w-100 py-2 fw-bold rounded-pill">Login to Dashboard</button>
+                    </form>
+                </div>
+
+                <!-- NEW: Complete Driver KYC Form -->
+                <div class="tab-pane fade" id="applyTab">
+                    <form id="driverApplyForm" class="scrollable-form">
+                        <h6 class="fw-bold text-teal border-bottom pb-2 mb-3">Personal Details</h6>
+                        <input type="text" class="form-control mb-3 py-2" id="d_name" placeholder="Full Name" required>
+                        <input type="email" class="form-control mb-3 py-2" id="d_email" placeholder="Email Address" required>
+                        <input type="tel" class="form-control mb-3 py-2" id="d_mobile" placeholder="Mobile Number" required>
+                        <input type="date" class="form-control mb-3 py-2" id="d_dob" required title="Date of Birth">
+                        
+                        <h6 class="fw-bold text-teal border-bottom pb-2 mb-3 mt-4">Address & Contact</h6>
+                        <textarea class="form-control mb-3 py-2" id="d_address" placeholder="Full Home Address" rows="2" required></textarea>
+                        <input type="tel" class="form-control mb-3 py-2" id="d_emergency" placeholder="Emergency Contact Number" required>
+                        
+                        <h6 class="fw-bold text-teal border-bottom pb-2 mb-3 mt-4">Vehicle & Documents</h6>
+                        <select class="form-select mb-3 py-2" id="d_vehicleType" required>
+                            <option value="">Select Vehicle Type</option>
+                            <option value="Bike">Bike / Two Wheeler</option>
+                            <option value="EV">Electric Vehicle</option>
+                        </select>
+                        <input type="text" class="form-control mb-3 py-2" id="d_vehicleNum" placeholder="Vehicle Registration No." required>
+                        <input type="text" class="form-control mb-3 py-2" id="d_rc" placeholder="Vehicle RC Number" required>
+                        <input type="text" class="form-control mb-3 py-2" id="d_dl" placeholder="Driving Licence Number" required>
+                        <input type="text" class="form-control mb-3 py-2" id="d_pan" placeholder="PAN Number (Optional)">
+                        
+                        <h6 class="fw-bold text-teal border-bottom pb-2 mb-3 mt-4">Payout Details</h6>
+                        <input type="text" class="form-control mb-3 py-2" id="d_bank" placeholder="Bank A/C Number or UPI ID" required>
+                        <input type="url" class="form-control mb-3 py-2" id="d_kycDoc" placeholder="Required Document Upload URL" required>
+
+                        <input type="password" class="form-control mb-4 py-2 mt-3" id="d_password" placeholder="Create Password" required>
+                        <button type="submit" class="btn btn-dark w-100 py-3 fw-bold rounded-pill">Submit Application</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. PENDING APPROVAL VIEW -->
+    <div id="pendingView" class="app-view auth-container">
+        <div class="auth-card text-center">
+            <i class="fas fa-user-clock fa-4x text-warning mb-3"></i>
+            <h4 class="fw-bold">Under Review</h4>
+            <p class="text-muted">Your driver profile & KYC is currently being verified by the AJonny Shop Admin team.</p>
+            <div id="rejectionAlert" class="alert alert-danger" style="display:none;"></div>
+            <button class="btn btn-outline-secondary w-100 rounded-pill mt-2" onclick="app.logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- 3. MAIN DRIVER APP VIEW -->
+    <div id="driverView" class="app-view">
+        <div class="main-content">
+            
+            <div class="mobile-header">
+                <img src="logo.jpg" alt="AJonny Driver Panel" style="height: 55px; max-width: 70vw; object-fit: contain;">
+                <div class="form-check form-switch fs-3 mb-0">
+                    <input class="form-check-input bg-dark border-secondary" type="checkbox" id="driverOnlineToggle" onchange="app.toggleStatus(this.checked)">
+                </div>
+            </div>
+
+            <!-- TAB 1: DUTY / HOME -->
+            <div id="tab_home" class="driver-tab">
+                <div class="row mb-4 g-3">
+                    <div class="col-6">
+                        <div class="stat-card py-3">
+                            <h3 class="mb-0 fw-bold" id="d_statToday">0</h3>
+                            <small class="text-muted fw-bold">DELIVERIES TODAY</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-card py-3">
+                            <h3 class="mb-0 fw-bold text-success" id="d_statEarn">₹0</h3>
+                            <small class="text-muted fw-bold">EARNED TODAY</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="driverStatusWarning" class="alert alert-danger text-center fw-bold rounded-3" style="display:none;">
+                    <i class="fas fa-moon mb-1 fs-3"></i><br>You are Offline<br><small class="fw-normal">Go online to start receiving orders.</small>
+                </div>
+
+                <div id="availableRequestsSection">
+                    <h5 class="mb-3 fw-bold mt-4"><i class="fas fa-list-ul"></i> New Requests</h5>
+                    <div id="driverRequestsList">
+                        <div class="text-center py-5">
+                            <div class="radar"><i class="fas fa-motorcycle text-teal fs-3" style="color: var(--primary-teal);"></i></div>
+                            <p class="text-muted fw-bold mb-0">Scanning for orders...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: ACTIVE JOBS -->
+            <div id="tab_active" class="driver-tab" style="display: none;">
+                <h5 class="mb-3 fw-bold text-primary"><i class="fas fa-bolt text-warning"></i> Active Jobs (<span id="activeJobCount">0</span>)</h5>
+                <div id="activeDeliveriesContainer">
+                    <div class="text-center py-5">
+                        <i class="fas fa-box-open text-muted fs-1 mb-3"></i>
+                        <p class="text-muted fw-bold">No active jobs right now.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEW TAB 3: FINANCE (COD COLLECTION) -->
+            <div id="tab_finance" class="driver-tab" style="display: none;">
+                <h4 class="mb-4 fw-bold">Finance & COD</h4>
+                
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 text-center" style="background: linear-gradient(135deg, #e65100, #ff9800); color: white;">
+                    <p class="mb-1 fw-bold text-white-50">CASH IN HAND (COD COLLECTED)</p>
+                    <h1 class="fw-bold mb-2" id="d_codCash" style="font-size: 3rem;">₹0</h1>
+                    <p class="small mb-4 text-white-50">Submit this cash to Admin to continue receiving orders.</p>
+                    <button class="btn btn-light rounded-pill fw-bold w-75 mx-auto text-danger" onclick="app.openRemittanceModal()">Submit Cash</button>
+                </div>
+
+                <h5 class="fw-bold mb-3">Remittance History</h5>
+                <div class="list-group list-group-flush" id="driverRemittances">
+                    <p class="text-muted text-center py-3">No cash deposits found.</p>
+                </div>
+            </div>
+
+            <!-- TAB 4: WALLET / EARNINGS -->
+            <div id="tab_wallet" class="driver-tab" style="display: none;">
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 text-center" style="background: linear-gradient(135deg, var(--primary-teal), #004d40); color: white;">
+                    <p class="mb-1 fw-bold text-white-50">AVAILABLE TO WITHDRAW</p>
+                    <h1 class="fw-bold mb-2" id="d_walletBalance" style="font-size: 3rem;">₹0</h1>
+                    <p class="small mb-4 text-white-50">Earnings: ₹29 per successful delivery</p>
+                    <button class="btn btn-light rounded-pill fw-bold w-75 mx-auto text-teal" onclick="app.requestWithdrawal()">Transfer to Bank</button>
+                </div>
+                
+                <h5 class="fw-bold mb-3">Recent Withdrawal Requests</h5>
+                <div class="list-group list-group-flush" id="driverTransactions">
+                    <p class="text-muted text-center py-3">No transactions found.</p>
+                </div>
+            </div>
+
+            <!-- TAB 5: PROFILE -->
+            <div id="tab_profile" class="driver-tab" style="display: none;">
+                <h4 class="fw-bold mb-4">My Profile</h4>
+                <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 text-center">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width:80px; height:80px;">
+                        <i class="fas fa-user text-muted fs-1"></i>
+                    </div>
+                    <h5 class="fw-bold mb-0" id="profName">Name</h5>
+                    <p class="text-muted mb-1" id="profVehicle">Vehicle</p>
+                    <small class="d-block text-muted mb-2 fw-bold" id="profBank">Bank/UPI: Loading...</small>
+                    <span class="badge bg-success rounded-pill px-3 py-2">Verified Partner</span>
+                </div>
+                <button class="btn btn-danger w-100 rounded-pill py-2 fw-bold" onclick="app.logout()">Log Out Account</button>
+            </div>
+            
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <a href="#" class="active" onclick="app.switchTab('home', this)"><i class="fas fa-motorcycle"></i> Duty</a>
+            <a href="#" id="navActiveTabBtn" onclick="app.switchTab('active', this)">
+                <div class="position-relative d-inline-block">
+                    <i class="fas fa-bolt"></i>
+                    <span id="navActiveBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.55rem; padding: 0.25rem 0.4rem; display: none;">0</span>
+                </div>
+                Active
+            </a>
+            <a href="#" onclick="app.switchTab('finance', this)"><i class="fas fa-rupee-sign"></i> Finance</a>
+            <a href="#" onclick="app.switchTab('wallet', this)"><i class="fas fa-wallet"></i> Earnings</a>
+            <a href="#" onclick="app.switchTab('profile', this)"><i class="fas fa-user-circle"></i> Profile</a>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- SELLER Pickup OTP Modal -->
+    <div class="modal fade" id="otpModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Pickup Verification</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="text-muted mb-4">Ask the <strong>SELLER</strong> for the 4-digit Pickup OTP.</p>
+                    <input type="number" class="form-control otp-input mx-auto w-75" id="otpInput" placeholder="----">
+                    <input type="hidden" id="otpOrderId">
+                    <button class="btn btn-teal w-100 mt-4 py-3 rounded-pill fw-bold" onclick="app.submitPickupOTP()">CONFIRM PICKUP</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: CUSTOMER Delivery OTP Modal -->
+    <div class="modal fade" id="deliveryOtpModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-success">Customer Delivery Verification</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="text-muted mb-4">Ask the <strong>CUSTOMER</strong> for their Delivery OTP to complete the order.</p>
+                    <input type="number" class="form-control otp-input mx-auto w-75 mb-3" id="deliveryOtpInput" placeholder="----">
+                    
+                    <div id="codCashAlert" class="alert alert-warning fw-bold border border-warning text-dark" style="display:none;">
+                        <i class="fas fa-hand-holding-usd"></i> COLLECT COD: ₹<span id="codAmountDisplay">0</span>
+                    </div>
+
+                    <input type="hidden" id="deliveryOtpOrderId">
+                    <button class="btn btn-success w-100 mt-2 py-3 rounded-pill fw-bold" onclick="app.submitDeliveryOTP()">VERIFY & COMPLETE DELIVERY</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Finance COD Remittance Modal -->
+    <div class="modal fade" id="remittanceModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-danger">Submit Cash to Admin</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-3">
+                    <img src="https://i.ibb.co/KzwRXgVh/Screenshot-20260818-232541.webp" alt="Admin QR Code" style="width: 150px; border-radius: 10px; border: 2px solid var(--primary-teal); margin-bottom: 10px;">
+                    <p class="text-primary fw-bold fs-5 mb-1">UPI: ajonny@ptaxis</p>
+                    <small class="text-muted d-block mb-3">Scan this QR or use the UPI ID via PhonePe / GPay</small>
+                    
+                    <div class="text-start">
+                        <label class="fw-bold small">Amount Deposited (₹)</label>
+                        <input type="number" class="form-control mb-3" id="remitAmountInput" placeholder="e.g. 500">
+                        
+                        <label class="fw-bold small">Transaction Reference / UTR ID</label>
+                        <input type="text" class="form-control mb-3" id="remitTxnInput" placeholder="Enter Transaction ID">
+                    </div>
+
+                    <button class="btn btn-danger w-100 py-3 rounded-pill fw-bold mt-2" onclick="app.submitRemittance()">SUBMIT VERIFICATION</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3 mt-2" style="z-index: 1055;"></div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCnT0KgHBq8HnVb4QgETVhfo6oFo2WnMu0",
+            authDomain: "ajonny-shop-store.firebaseapp.com",
+            databaseURL: "https://ajonny-shop-store-default-rtdb.firebaseio.com",
+            projectId: "ajonny-shop-store",
+            storageBucket: "ajonny-shop-store.firebasestorage.app",
+            messagingSenderId: "536237083535",
+            appId: "1:536237083535:web:e4451dc73fbd31a70859fa",
+            measurementId: "G-2MBGDDBL9B"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        const app = {
+            user: null,
+            profile: null,
+            isOnline: false,
+            isDashboardInitialized: false,
+            isRegistering: false,
+            withdrawals: [],
+            remittances: [],
+            activeOrderCache: null, // Stores current order being processed
+
+            init() {
+                auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
+                    auth.onAuthStateChanged((user) => {
+                        if (user) {
+                            this.user = user;
+                            if (!this.isRegistering) {
+                                document.getElementById('loader').style.display = 'flex';
+                                this.verifyDriverAccount();
+                            }
+                        } else {
+                            this.user = null;
+                            this.profile = null;
+                            this.isDashboardInitialized = false;
+                            this.showView('authView');
+                            document.getElementById('loader').style.display = 'none';
+                        }
+                    });
+                });
+
+                document.getElementById('loginForm').addEventListener('submit', (e) => { e.preventDefault(); this.login(); });
+                document.getElementById('driverApplyForm').addEventListener('submit', (e) => { e.preventDefault(); this.register(); });
+            },
+
+            showView(viewId) {
+                document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+                document.getElementById(viewId).classList.add('active');
+            },
+
+            verifyDriverAccount() {
+                const driverRef = db.ref('drivers/' + this.user.uid);
+                driverRef.off();
+                
+                driverRef.on('value', snap => {
+                    document.getElementById('loader').style.display = 'none';
+                    if (snap.exists()) {
+                        this.profile = snap.val();
+                        if (this.profile.status === 'verified') {
+                            this.showView('driverView');
+                            this.initDashboard();
+                        } else {
+                            this.showView('pendingView');
+                        }
+                    } else {
+                        if (!this.isRegistering) {
+                            this.showToast('You are not registered as a Driver.', 'danger');
+                            auth.signOut();
+                        }
+                    }
+                }, (error) => {
+                    this.showToast('Network error checking account.', 'warning');
+                    document.getElementById('loader').style.display = 'none';
+                });
+            },
+
+            async login() {
+                const e = document.getElementById('loginEmail').value;
+                const p = document.getElementById('loginPassword').value;
+                document.getElementById('loader').style.display = 'flex';
+                try { await auth.signInWithEmailAndPassword(e, p); } 
+                catch(err) { document.getElementById('loader').style.display = 'none'; this.showToast(err.message, 'danger'); }
+            },
+
+            // UPDATED: Comprehensive KYC fields capturing
+            async register() {
+                const email = document.getElementById('d_email').value;
+                const pass = document.getElementById('d_password').value;
+                document.getElementById('loader').style.display = 'flex';
+                
+                this.isRegistering = true;
+                
+                try {
+                    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                    await db.ref('drivers/' + cred.user.uid).set({
+                        name: document.getElementById('d_name').value,
+                        email: email,
+                        mobile: document.getElementById('d_mobile').value,
+                        dob: document.getElementById('d_dob').value,
+                        address: document.getElementById('d_address').value,
+                        emergencyContact: document.getElementById('d_emergency').value,
+                        dlNumber: document.getElementById('d_dl').value,
+                        vehicleType: document.getElementById('d_vehicleType').value,
+                        vehicleNumber: document.getElementById('d_vehicleNum').value,
+                        rcNumber: document.getElementById('d_rc').value,
+                        pan: document.getElementById('d_pan').value,
+                        bankDetails: document.getElementById('d_bank').value,
+                        kycDoc: document.getElementById('d_kycDoc').value,
+                        status: 'pending',
+                        submittedAt: new Date().toISOString(),
+                        walletBalance: 0,
+                        codCashInHand: 0,
+                        isOnline: false
+                    });
+                    
+                    this.showToast('Application Submitted!', 'success');
+                    this.user = cred.user;
+                    this.verifyDriverAccount();
+                } catch(err) {
+                    this.showToast(err.message, 'danger');
+                    document.getElementById('loader').style.display = 'none';
+                } finally {
+                    this.isRegistering = false;
+                }
+            },
+
+            logout() { auth.signOut(); },
+
+            initDashboard() {
+                if (this.isDashboardInitialized) return;
+                this.isDashboardInitialized = true;
+
+                document.getElementById('profName').innerText = this.profile.name;
+                document.getElementById('profVehicle').innerText = `${this.profile.vehicleType} - ${this.profile.vehicleNumber}`;
+                document.getElementById('profBank').innerText = `Bank/UPI: ${this.profile.bankDetails}`;
+
+                document.getElementById('driverOnlineToggle').checked = this.profile.isOnline;
+                this.toggleStatus(this.profile.isOnline, true);
+                
+                db.ref('drivers/' + this.user.uid).on('value', snap => {
+                    if(snap.exists()) {
+                        const data = snap.val();
+                        this.profile = data;
+                        document.getElementById('d_walletBalance').innerText = '₹' + (data.walletBalance || 0);
+                        document.getElementById('d_codCash').innerText = '₹' + (data.codCashInHand || 0);
+                    }
+                });
+
+                this.listenToWithdrawals();
+                this.listenToRemittances();
+            },
+
+            switchTab(tabId, el) {
+                document.querySelectorAll('.driver-tab').forEach(t => t.style.display = 'none');
+                document.getElementById('tab_' + tabId).style.display = 'block';
+                document.querySelectorAll('.bottom-nav a').forEach(a => a.classList.remove('active'));
+                if(el) el.classList.add('active');
+            },
+
+            async toggleStatus(isOnline, skipDbUpdate = false) {
+                this.isOnline = isOnline;
+                const warn = document.getElementById('driverStatusWarning');
+                warn.style.display = isOnline ? 'none' : 'block';
+
+                if (!skipDbUpdate) await db.ref('drivers/' + this.user.uid).update({ isOnline: isOnline });
+
+                if (isOnline) {
+                    this.listenToOrders();
+                } else {
+                    db.ref('orders').off(); 
+                    document.getElementById('driverRequestsList').innerHTML = `<div class="text-center py-4"><i class="fas fa-power-off text-muted fs-1 mb-2"></i><p class="text-muted fw-bold">You are currently offline.</p></div>`;
+                }
+            },
+
+            showScanningUI() {
+                document.getElementById('driverRequestsList').innerHTML = `<div class="text-center py-5"><div class="radar"><i class="fas fa-motorcycle text-teal fs-3" style="color: var(--primary-teal);"></i></div><p class="text-muted fw-bold mb-1">Scanning for orders...</p></div>`;
+            },
+
+            listenToOrders() {
+                db.ref('orders').on('value', snap => {
+                    const data = snap.val();
+                    if(!data) { this.showScanningUI(); return; }
+
+                    const allOrders = Object.values(data);
+                    const myOrders = allOrders.filter(o => o.driverId === this.user.uid);
+                    
+                    const history = myOrders.filter(o => ['Delivered', 'Cancelled'].includes((o.status || '').trim()));
+                    const todayDelivered = history.filter(o => o.status === 'Delivered');
+                    document.getElementById('d_statToday').innerText = todayDelivered.length;
+                    document.getElementById('d_statEarn').innerText = `₹${todayDelivered.length * 40}`;
+
+                    const activeOrders = myOrders.filter(o => ['Driver Assigned', 'Picked Up', 'Out for Delivery'].includes((o.status || '').trim()));
+                    const badge = document.getElementById('navActiveBadge');
+                    
+                    if (activeOrders.length > 0) {
+                        document.getElementById('activeJobCount').innerText = activeOrders.length;
+                        badge.innerText = activeOrders.length;
+                        badge.style.display = 'block';
+                        this.renderActiveDeliveries(activeOrders);
+                    } else {
+                        document.getElementById('activeJobCount').innerText = '0';
+                        badge.style.display = 'none';
+                        document.getElementById('activeDeliveriesContainer').innerHTML = `<div class="text-center py-5"><i class="fas fa-box-open text-muted fs-1 mb-3"></i><p class="text-muted fw-bold">No active jobs right now.</p></div>`;
+                    }
+                    
+                    const reqs = allOrders.filter(o => (o.status || '').trim() === 'Ready for Pickup' && !o.driverId);
+                    document.getElementById('availableRequestsSection').style.display = 'block';
+                    if(!reqs.length) this.showScanningUI(); else this.renderAvailableRequests(reqs);
+                });
+            },
+
+            renderAvailableRequests(reqs) {
+                document.getElementById('driverRequestsList').innerHTML = reqs.map(r => {
+                    const city = r.deliveryAddress?.city || 'Customer Area';
+                    const pickup = r.pickupAddress || 'AJonny Seller';
+                    return `
+                    <div class="delivery-card">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                            <div><small class="text-muted fw-bold">ORDER #${r.orderId}</small></div>
+                            <div><span class="badge bg-success px-3 py-2 fs-6">Earning: ₹29</span></div>
+                        </div>
+                        <div class="location-track">
+                            <div class="loc-point"><i class="fas fa-circle text-primary"></i><small class="text-muted d-block fw-bold">PICKUP</small><span class="fw-bold">${pickup}</span></div>
+                            <div class="loc-point mb-0"><i class="fas fa-map-marker-alt text-danger fs-5" style="left:-29px;"></i><small class="text-muted d-block fw-bold">DROP</small><span class="fw-bold">${city}</span></div>
+                        </div>
+                        <button class="btn btn-teal w-100 py-3 mt-2 rounded-pill fw-bold" onclick="app.acceptDelivery('${r.orderId}')">ACCEPT ORDER</button>
+                    </div>`;
+                }).join('');
+            },
+
+            async acceptDelivery(orderId) {
+                const ref = db.ref('orders/' + orderId);
+                const snap = await ref.once('value');
+                const order = snap.val();
+                
+                if (order && !order.driverId) {
+                    await ref.update({ driverId: this.user.uid, driverName: this.profile.name, driverPhone: this.profile.mobile, status: 'Driver Assigned', statusUpdatedAt: Date.now() });
+                    this.showToast('Job Accepted! Check the Active tab.', 'success');
+                    this.switchTab('active', document.getElementById('navActiveTabBtn'));
+                } else {
+                    this.showToast('Order was assigned to another driver.', 'warning');
+                }
+            },
+
+            renderActiveDeliveries(activeOrders) {
+                document.getElementById('activeDeliveriesContainer').innerHTML = activeOrders.map(o => {
+                    let actionArea = '';
+                    const stat = (o.status || '').trim();
+                    const sellerMobile = o.sellerPhone || 'Not Provided';
+                    
+                    if (stat === 'Driver Assigned') {
+                        actionArea = `
+                            <div class="alert border bg-light py-3 mt-3 rounded-3 text-center">
+                                <i class="fas fa-store fs-3 mb-1 text-primary"></i><br><strong>Step 1: Pick up from Seller</strong><br>
+                                <a href="tel:${sellerMobile}" class="btn btn-sm btn-outline-success rounded-pill mt-2"><i class="fas fa-phone-alt"></i> Call Seller</a>
+                            </div>
+                            <button class="btn btn-primary w-100 py-3 mt-2 rounded-pill fw-bold shadow-sm" onclick="app.openPickupOtpModal('${o.orderId}')">ENTER SELLER OTP</button>
+                        `;
+                    } else if (stat === 'Picked Up' || stat === 'Out for Delivery') {
+                        if(stat === 'Picked Up') db.ref('orders/'+o.orderId).update({status: 'Out for Delivery'});
+                        
+                        actionArea = `
+                            <div class="alert alert-warning border-0 bg-light py-3 mt-3 rounded-3 text-center">
+                                <i class="fas fa-home fs-3 mb-2 text-danger"></i><br><strong>Step 2: Deliver to Customer</strong>
+                            </div>
+                            <button class="btn btn-success w-100 py-3 mt-2 rounded-pill fw-bold shadow-sm" onclick="app.openDeliveryOtpModal('${o.orderId}')">
+                                VERIFY CUSTOMER OTP & DELIVER
+                            </button>
+                            <button class="btn btn-outline-danger w-100 py-2 mt-2 rounded-pill fw-bold" onclick="app.cancelDelivery('${o.orderId}')">Cancel (Customer Unavailable)</button>
+                        `;
+                    }
+
+                    return `
+                        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                                <h6 class="mb-0 fw-bold">Order #${o.orderId}</h6>
+                                <a href="tel:${o.deliveryAddress?.mobile || ''}" class="btn btn-sm btn-outline-success rounded-circle"><i class="fas fa-phone"></i></a>
+                            </div>
+                            <div class="location-track m-0">
+                                <div class="loc-point"><i class="fas fa-circle text-primary"></i><small class="text-muted d-block fw-bold">PICKUP</small><strong>${o.pickupAddress || 'Seller'}</strong></div>
+                                <div class="loc-point mb-0"><i class="fas fa-map-marker-alt text-danger fs-5" style="left:-29px;"></i><small class="text-muted d-block fw-bold">DROP-OFF</small><strong>${o.deliveryAddress?.name || 'Customer'}</strong><br><span class="text-muted">${o.deliveryAddress?.road || ''}, ${o.deliveryAddress?.city || ''}</span></div>
+                            </div>
+                            <div class="mt-4 p-3 rounded-3" style="background:#f8f9fa; border:1px dashed #ccc;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted fw-bold">Collection Status:</span>
+                                    <span class="fs-5 fw-bold ${o.paymentMethod === 'COD' ? 'text-danger' : 'text-success'}">
+                                        ${o.paymentMethod === 'COD' ? 'COLLECT ₹' + o.codAmount : 'PAID ONLINE'}
+                                    </span>
+                                </div>
+                            </div>
+                            ${actionArea}
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            // --- OTP VERIFICATION LOGICS ---
+
+            openPickupOtpModal(orderId) {
+                document.getElementById('otpOrderId').value = orderId;
+                document.getElementById('otpInput').value = '';
+                new bootstrap.Modal(document.getElementById('otpModal')).show();
+            },
+
+            async submitPickupOTP() {
+                const orderId = document.getElementById('otpOrderId').value;
+                const inputOtp = document.getElementById('otpInput').value.trim();
+                if (inputOtp.length !== 4) return this.showToast('Enter 4-digit OTP', 'warning');
+
+                const snap = await db.ref('orders/' + orderId).once('value');
+                const order = snap.val();
+
+                if (order.pickupOtp === inputOtp) {
+                    await db.ref('orders/' + orderId).update({ status: 'Picked Up', statusUpdatedAt: Date.now() });
+                    bootstrap.Modal.getInstance(document.getElementById('otpModal')).hide();
+                    this.showToast('Package Picked Up! Navigate to customer.', 'success');
+                } else { this.showToast('Incorrect Pickup OTP.', 'danger'); }
+            },
+
+            // NEW: CUSTOMER Delivery Verification 
+            async openDeliveryOtpModal(orderId) {
+                const snap = await db.ref('orders/' + orderId).once('value');
+                this.activeOrderCache = snap.val();
+                
+                document.getElementById('deliveryOtpOrderId').value = orderId;
+                document.getElementById('deliveryOtpInput').value = '';
+                
+                const codAlert = document.getElementById('codCashAlert');
+                if (this.activeOrderCache.paymentMethod === 'COD') {
+                    codAlert.style.display = 'block';
+                    document.getElementById('codAmountDisplay').innerText = this.activeOrderCache.codAmount;
+                } else {
+                    codAlert.style.display = 'none';
+                }
+                
+                new bootstrap.Modal(document.getElementById('deliveryOtpModal')).show();
+            },
+
+            async submitDeliveryOTP() {
+                const inputOtp = document.getElementById('deliveryOtpInput').value.trim();
+                const order = this.activeOrderCache;
+                
+                if (inputOtp.length !== 4) return this.showToast('Enter 4-digit Delivery OTP', 'warning');
+                if (order.deliveryOtp !== inputOtp) return this.showToast('Incorrect Customer OTP!', 'danger');
+
+                // OTP MATCHED -> Complete Delivery Process
+                await db.ref('orders/' + order.orderId).update({ 
+                    status: 'Delivered', 
+                    paymentStatus: order.paymentMethod === 'COD' ? 'COD_COLLECTED' : 'PAID',
+                    statusUpdatedAt: Date.now() 
+                });
+                
+                const currentWallet = this.profile.walletBalance || 0;
+                let updates = { walletBalance: currentWallet + 40 };
+
+                if (order.paymentMethod === 'COD') {
+                    const currentCod = this.profile.codCashInHand || 0;
+                    updates.codCashInHand = currentCod + order.codAmount;
+                }
+                
+                await db.ref('drivers/' + this.user.uid).update(updates);
+                
+                bootstrap.Modal.getInstance(document.getElementById('deliveryOtpModal')).hide();
+                this.showToast('Delivery Completed! ₹29 added to wallet.', 'success');
+            },
+
+            async cancelDelivery(orderId) {
+                if(confirm("Confirm cancellation? (e.g. Customer unavailable/refused)")) {
+                    await db.ref('orders/' + orderId).update({ status: 'Cancelled', cancelReason: 'Customer unavailable/refused (Cancelled by Driver)', statusUpdatedAt: Date.now() });
+                    this.showToast('Delivery Cancelled.', 'danger');
+                }
+            },
+
+            // --- FINANCE & WITHDRAWALS ---
+
+            listenToWithdrawals() {
+                db.ref('withdrawals').orderByChild('uid').equalTo(this.user.uid).on('value', snap => {
+                    const data = snap.val();
+                    this.withdrawals = data ? Object.values(data).sort((a,b) => b.timestamp - a.timestamp) : [];
+                    
+                    const list = document.getElementById('driverTransactions');
+                    if(!this.withdrawals.length) {
+                        list.innerHTML = '<p class="text-muted text-center py-3">No transactions found.</p>'; return;
+                    }
+                    list.innerHTML = this.withdrawals.map(w => {
+                        let badge = w.status === 'Pending' ? 'bg-warning text-dark' : (w.status === 'Approved' || w.status === 'Paid' ? 'bg-success' : 'bg-danger');
+                        return `<div class="list-group-item d-flex justify-content-between align-items-center py-3"><div><strong class="d-block">Transfer to Bank</strong><small class="text-muted">${new Date(w.timestamp).toLocaleString()}</small></div><div class="text-end"><strong class="d-block fs-5 text-teal">-₹${w.amount}</strong><span class="badge ${badge}">${w.status}</span></div></div>`;
+                    }).join('');
+                });
+            },
+
+            // BUG FIX: Attached Driver's Bank Details to Withdrawal Request
+            requestWithdrawal() {
+                const bal = this.profile.walletBalance || 0;
+                if(bal < 100) return this.showToast('Minimum withdrawal amount is ₹100', 'warning');
+                
+                if(confirm(`Request withdrawal for ₹${bal}? Amount will be sent to your bank.`)) {
+                    db.ref('withdrawals').push({
+                        uid: this.user.uid,
+                        role: 'driver',
+                        amount: bal,
+                        bankDetails: this.profile.bankDetails || 'Not Provided (Update KYC)', // ADDED
+                        status: 'Pending',
+                        timestamp: Date.now()
+                    });
+                    db.ref('drivers/' + this.user.uid).update({walletBalance: 0});
+                    this.showToast('Withdrawal request submitted!', 'success');
+                }
+            },
+
+            // NEW: COD Remittance Flow
+            openRemittanceModal() {
+                document.getElementById('remitAmountInput').value = this.profile.codCashInHand || 0;
+                document.getElementById('remitTxnInput').value = '';
+                new bootstrap.Modal(document.getElementById('remittanceModal')).show();
+            },
+
+            async submitRemittance() {
+                const amt = parseInt(document.getElementById('remitAmountInput').value);
+                const txnId = document.getElementById('remitTxnInput').value.trim();
+
+                if (!amt || amt <= 0) return this.showToast('Enter a valid amount', 'warning');
+                if (!txnId) return this.showToast('Transaction ID is required', 'warning');
+                if (amt > (this.profile.codCashInHand || 0)) return this.showToast('Amount exceeds cash in hand', 'danger');
+
+                await db.ref('remittances').push({
+                    driverId: this.user.uid,
+                    driverName: this.profile.name,
+                    amount: amt,
+                    txnId: txnId,
+                    status: 'Pending Approval',
+                    timestamp: Date.now()
+                });
+                
+                bootstrap.Modal.getInstance(document.getElementById('remittanceModal')).hide();
+                this.showToast('Remittance submitted! Waiting for Admin approval.', 'success');
+            },
+
+            listenToRemittances() {
+                db.ref('remittances').orderByChild('driverId').equalTo(this.user.uid).on('value', snap => {
+                    const data = snap.val();
+                    this.remittances = data ? Object.values(data).sort((a,b) => b.timestamp - a.timestamp) : [];
+                    
+                    const list = document.getElementById('driverRemittances');
+                    if(!this.remittances.length) {
+                        list.innerHTML = '<p class="text-muted text-center py-3">No cash deposits found.</p>'; return;
+                    }
+                    
+                    list.innerHTML = this.remittances.map(r => {
+                        let badgeClass = r.status.includes('Pending') ? 'bg-warning text-dark' : (r.status === 'Approved' ? 'bg-success' : 'bg-danger');
+                        return `
+                        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <div><strong class="d-block">Cash Deposit</strong><small class="text-muted">Txn: ${r.txnId}</small><br><small class="text-muted">${new Date(r.timestamp).toLocaleString()}</small></div>
+                            <div class="text-end"><strong class="d-block fs-5 text-danger">-₹${r.amount}</strong><span class="badge ${badgeClass}">${r.status}</span></div>
+                        </div>`;
+                    }).join('');
+                });
+            },
+
+            showToast(message, type = 'info') {
+                const bgClass = type === 'success' ? 'bg-success' : type === 'danger' ? 'bg-danger' : type === 'warning' ? 'bg-warning text-dark' : 'bg-primary';
+                const toastHtml = `<div class="toast align-items-center text-white ${bgClass} border-0 rounded-pill shadow" role="alert" aria-live="assertive" aria-atomic="true"><div class="d-flex px-2 py-1"><div class="toast-body fw-bold">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;
+                const container = document.querySelector('.toast-container');
+                container.insertAdjacentHTML('beforeend', toastHtml);
+                const toastEl = container.lastElementChild;
+                new bootstrap.Toast(toastEl, { delay: 3000 }).show();
+                setTimeout(() => toastEl.remove(), 3500);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
